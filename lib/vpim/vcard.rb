@@ -360,6 +360,56 @@ module Vpim
       end
     end
 
+    class Url < String
+      # true, false (boolean): whether this is the preferred email address
+      attr_accessor :preferred
+      # home, work, cell, car, pager (Array of String): the location
+      # of the device
+      attr_accessor :location
+      # voice, fax, video, msg, bbs, modem, isdn, pcs (Array of String): the
+      # capabilities of the device
+      attr_accessor :capability
+      # nonstandard types, their meaning is undefined (Array of String). These
+      # might be found during decoding, but shouldn't be set during encoding.
+      attr_reader :nonstandard
+
+      def initialize(telephone='') #:nodoc:
+        @preferred = false
+        @location = []
+        @capability = []
+        @nonstandard = []
+        super(telephone)
+      end
+
+      def inspect #:nodoc:
+        s = "#<#{self.class.to_s}: #{to_str.inspect}"
+        s << ", pref" if preferred
+        s << ", " << @location.join(", ") if @location.first
+        s << ", " << @capability.join(", ") if @capability.first
+        s << ", #{@nonstandard.join(", ")}" if @nonstandard.first
+        s
+      end
+
+      def encode #:nodoc:
+        value = to_str.strip
+
+        if value.length < 1
+          raise InvalidEncodingError, "URL must have a value"
+        end
+
+        params = [ @location, @capability, @nonstandard ]
+        params << 'pref'  if @preferred
+
+        params = params.flatten.compact.map { |s| s.to_str.downcase }.uniq
+
+        paramshash = {}
+
+        paramshash['TYPE'] = params if params.first
+
+        Vpim::DirectoryInfo::Field.create( 'URL', value, paramshash)
+      end
+    end
+
     # The name from a vCard, including all the components of the N: and FN:
     # fields.
     class Name
@@ -1357,7 +1407,11 @@ module Vpim
 
       # Add a URL field, URL.
       def add_url(url)
-        @card << Vpim::DirectoryInfo::Field.create( 'URL', url.to_str );
+        u = Vpim::DirectoryInfo::Url.new( url.to_str );
+        if block_given?
+          yield u
+        end
+        @card << u.encode
       end
 
       # Add a Field, +field+.
