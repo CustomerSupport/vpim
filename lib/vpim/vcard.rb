@@ -1407,7 +1407,7 @@ module Vpim
 
       # Add a URL field, URL.
       def add_url(url)
-        u = Vpim::DirectoryInfo::Url.new( url.to_str );
+        u = Vpim::Vcard::Url.new( url.to_str );
         if block_given?
           yield u
         end
