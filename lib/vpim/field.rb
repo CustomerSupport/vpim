@@ -233,7 +233,7 @@ module Vpim
       # FIXME - breaks round-trip encoding, need to change this to not wrap
       # fields that are already wrapped.
       def encode(width=nil)
-        width = 75 unless width
+        width = 0 unless width
         l = @line
         # Wrap to width, unless width is zero.
         if width > 0
